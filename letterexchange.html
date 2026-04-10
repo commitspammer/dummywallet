@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Category Market UI</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+  background: #111;
+  color: white;
+}
+
+.container {
+  display: flex;
+  width: 100%;
+}
+
+.main {
+  flex: 5;
+  padding: 20px;
+  display: flex;
+}
+
+.sidebar {
+  flex: 1;
+  font-size: 11px;
+  background: #111;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Ranking */
+.rank-list {
+  flex: 1;
+}
+
+.rank-item {
+  font-size: 28px;
+  margin: 10px 0;
+  padding: 10px;
+  background: #222;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-weight: bold;
+}
+
+.green { color: #4caf50; }
+.red { color: #f44336; }
+
+/* Smooth movement */
+.list-move {
+  transition: transform 2.0s;
+}
+
+/* Graph */
+.graph {
+  flex: 1;
+  margin-left: 20px;
+  background: #000;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Sidebar */
+button {
+  width: 100%;
+  margin: 5px 0;
+  padding: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  background: #333;
+  border-style:none;
+  border-radius: 8px;
+  color: white;
+}
+
+input {
+  width: 100%;
+  margin: 5px 0;
+  background: #333;
+  border-style:none;
+  border-radius: 8px;
+  color: white;
+}
+
+input[type=number] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+}
+
+.sidebar-variable {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 5px;
+  align-items:center;
+}
+
+.category-edit {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.category-edit input {
+  flex: 1;
+}
+</style>
+</head>
+
+<body>
+<div id="app" class="container">
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="rank-list">
+      <transition-group name="list" tag="div">
+        <div v-for="c in sortedCategories" :key="c.name" class="rank-item">
+          <span>
+              {{ c.name }}
+              <span style="font-size:16px" :class="priceChangeClass(c)">
+                  <span v-if="c.price - c.last >= 0">+</span>
+                  {{ (c.price - c.last).toFixed(2) }}
+              </span>
+          </span>
+
+          <div>
+            <span 
+              :class="priceChangeClass(c)">
+              ${{ c.price.toFixed(2) }}
+              <button v-if="editMode" @click="removeCategory(c)" style="width:auto">❌</button>
+            </span>
+
+          </div>
+        </div>
+      </transition-group>
+    </div>
+
+    <!-- GRAPH -->
+    <div class="graph">
+      <canvas ref="canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <button @click="toggleEdit">CUSTOMIZE ⚙️</button>
+    <!-- EDIT MODE INPUTS -->
+    <div v-if="editMode">
+      <h3>Edit Categories</h3>
+      <div v-for="c in categories" class="category-edit">
+        <input v-model="c.name">
+        <input type="number" v-model.number="c.price">
+      </div>
+    </div>
+    <button v-if="editMode" @click="addCategory">➕ NEW CATEGORY</button>
+    <button v-if="editMode" @click="saveEdit">SAVE 💾</button>
+
+    <hr>
+    <button @click="shuffle">SHUFFLE 🔀</button>
+
+    <hr>
+    <button @click="randomize">RANDOMIZE 🎲</button>
+    <div class="sidebar-variable">
+      MIN <input type="number" v-model.number="rand.min">
+    </div>
+    <div class="sidebar-variable">
+      MAX <input type="number" v-model.number="rand.max">
+    </div>
+    <div class="sidebar-variable">
+      DECIMALS <input type="number" v-model.number="rand.decimals">
+    </div>
+
+    <hr>
+    <button @click="simulate">SIMULATE 📈</button>
+    <div class="sidebar-variable">
+      MIN <input type="number" v-model.number="sim.min">
+    </div>
+    <div class="sidebar-variable">
+      MAX <input type="number" v-model.number="sim.max">
+    </div>
+    <div class="sidebar-variable">
+      DECIMALS <input type="number" v-model.number="sim.decimals">
+    </div>
+    <div class="sidebar-variable">
+      CRASH <input type="number" v-model.number="sim.crash">
+    </div>
+    <div class="sidebar-variable">
+      SURGE <input type="number" v-model.number="sim.surge">
+    </div>
+    <div class="sidebar-variable">
+      CRASH% <input type="number" v-model.number="sim.crashChance">
+    </div>
+    <div class="sidebar-variable">
+      SURGE% <input type="number" v-model.number="sim.surgeChance">
+    </div>
+    <div class="sidebar-variable">
+      REPEAT
+      <button @click="toggleRepeatSimulation()">
+        {{ sim.repeat ? "ON" : "OFF" }}
+      </button>
+    </div>
+    <div class="sidebar-variable">
+      SECONDS <input type="number" v-model.seconds="sim.seconds">
+    </div>
+
+    <hr>
+    <button @click="resetHistory">RESET HISTORY ⚠️</button>
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      editMode: false,
+
+      categories: [
+        { name: "Sports", price: 10, history: [10], last: 10 },
+        { name: "Countries", price: 15, history: [15], last: 15 },
+        { name: "Animals", price: 5, history: [5], last: 5 }
+      ],
+
+      rand: { min: 10, max: 30, decimals: 0 },
+
+      sim: {
+        min: -5,
+        max: 5,
+        decimals: 0,
+        crash: 10,
+        surge: 10,
+        crashChance: 5,
+        surgeChance: 5,
+        repeat: false,
+        seconds: 20,
+        interval: null
+      }
+    }
+  },
+
+  computed: {
+    sortedCategories() {
+      return [...this.categories].sort((a,b)=>b.price-a.price);
+    }
+  },
+
+  methods: {
+    toggleRepeatSimulation() {
+      this.sim.repeat = !this.sim.repeat;
+      if (this.sim.repeat) {
+        this.sim.interval = setInterval(this.simulate, this.sim.seconds * 1000);
+      } else {
+        clearInterval(this.sim.interval);
+        this.sim.interval = null;
+      }
+    },
+
+    toggleEdit() {
+      this.editMode = !this.editMode;
+    },
+
+    saveEdit() {
+      let names = this.categories.map(c => c.name);
+      let allUnique = new Set(names).size === names.length;
+      if (!allUnique) {
+          alert("There can't be duplicate names")
+          return;
+      }
+      this.editMode = false;
+      this.updateHistory();
+    },
+
+    addCategory() {
+      this.categories.push({
+        name: "New",
+        price: 0,
+        history: [0],
+        last: 0
+      });
+    },
+
+    removeCategory(c) {
+      this.categories = this.categories.filter(x => x !== c);
+    },
+
+    shuffle() {
+      const prices = this.categories.map(c=>c.price);
+      prices.sort(()=>Math.random()-0.5);
+      this.categories.forEach((c,i)=>{
+        c.last = c.price;
+        c.price = prices[i];
+      });
+      this.updateHistory();
+    },
+
+    randomize() {
+      this.categories.forEach(c=>{
+        c.last = c.price;
+        c.price = this.random(this.rand.min, this.rand.max, this.rand.decimals);
+      });
+      this.updateHistory();
+    },
+
+    simulate() {
+      this.categories.forEach(c=>{
+        c.last = c.price;
+
+        let roll = Math.random()*100;
+
+        if (roll < this.sim.crashChance) {
+          c.price -= this.sim.crash;
+        } else if (roll < this.sim.crashChance + this.sim.surgeChance) {
+          c.price += this.sim.surge;
+        } else {
+          c.price += this.random(this.sim.min, this.sim.max, this.sim.decimals);
+        }
+
+        if (c.price < 0) c.price = 0;
+      });
+
+      this.updateHistory();
+    },
+
+    random(min,max,dec) {
+      let val = Math.random()*(max-min)+min;
+      return parseFloat(val.toFixed(dec));
+    },
+
+    resetHistory() {
+      this.categories.forEach(c=>{
+        c.history = []
+      });
+      this.updateHistory();
+    },
+
+    updateHistory() {
+      this.categories.forEach(c=>{
+        c.history.push(c.price);
+        if (c.history.length > 30) c.history.shift();
+      });
+      this.drawGraph();
+    },
+
+    priceChangeClass(c) {
+      if (c.price > c.last) return "green";
+      if (c.price < c.last) return "red";
+      return "";
+    },
+
+    drawGraph() {
+      const canvas = this.$refs.canvas;
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      let maxv = 0;
+      this.categories.forEach((c,i)=>{
+        let last = c.history[c.history.length-1];
+        if (last > maxv) maxv = last;
+      });
+      maxv += 2;
+
+      this.categories.forEach(c=>{
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+
+        c.history.forEach((v,i)=>{
+          let x = (i/(c.history.length-1))*canvas.width;
+          let y = canvas.height - (v/maxv)*canvas.height;
+
+          if(i===0) ctx.moveTo(x,y);
+          else ctx.lineTo(x,y);
+        });
+
+        let last = c.history[c.history.length-1];
+        let prev = c.history[c.history.length-2] || last;
+
+        ctx.strokeStyle = last >= prev ? "#4caf50" : "#f44336";
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.font='15px Arial';
+        let x = (1)*canvas.width;
+        let y = canvas.height - (c.history[c.history.length-1]/maxv)*canvas.height;
+        let textWidth = ctx.measureText(c.name).width;
+        ctx.fillStyle = "white";
+        ctx.fillText(c.name, x-textWidth, y);
+      });
+    }
+  },
+
+  mounted() {
+    this.drawGraph();
+  }
+}).mount("#app");
+</script>
+
+</body>
+</html>
