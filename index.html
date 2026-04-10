@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+
+<div id="resetBtn">⟳</div>
+
+<div class="container">
+  <h1 id="balance">$0.00</h1>
+  <button onclick="startScanner()">RECEIVE PAYMENT</button>
+
+  <div id="reader" style="display:none;"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
