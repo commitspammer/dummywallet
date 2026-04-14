@@ -1,0 +1,67 @@
+# Letter Exchange
+
+You must help me with making an interface for a game.
+
+The game consists of categories of words (sports, furniture, hobbies...)
+which have an associated price ($5, $20, $15...).
+Those prices fluctuate over the course of the game,
+which means the categories go up and down on the rank, kinda like a stock market.
+I need an HTML + JS UI that lets me display this information on the screen.
+
+Keep it in a single HTML file so it's easy to setup.
+Instead of using pure JS, use Vue.js CDN because it's neater.
+
+The UI should be divided into a main section and a side bar.
+
+The main section consists of the ranking itself,
+with a bigger font so it's visible from a distance.
+Whenever this ranking updates, the categories should nicely float to their
+positions in the ranking, so it's easy on the eye.
+To the right, there should also be some sort of stock-market-like graph that
+shows the history of the prices of each category,
+using red and green colors to make it clear if categories have gone up or down.
+
+The side bar is where all the customization is found.
+By default, there must be four buttons: UPDATE MANUALLY, SHUFFLE, RANDOMIZE and SIMULATE.
+
+The UPDATE MANUALLY button allows the user to edit each price manually,
+as well as add new categories or remove existing ones.
+Pressing it is like entering an "edit mode".
+It makes a new ADD CATEGORY button appear,
+and for each category it adds a REMOVE button and turns the prices into editable text input;
+it will also make a SAVE button appear below UPDATE MANUALLY button.
+Pressing the SAVE button updates the rankings based on the new user inputted values,
+making the SAVE button disappear and leaving "edit mode" entirely. 
+
+The SHUFFLE button randomly swaps the prices of each category around.
+Pressing it updates the rankings automatically.
+
+Below the RANDOMIZE button are three number inputs: MIN, MAX and DECIMALS.
+The RANDOMIZE button sets new random prices for each category,
+making sure the new price isn't lower than MIN, higher than MAX and has that many DECIMALS
+(for instance, if the DECIMALS input is 0, then the new price must be an integer).
+Pressing it updates the rankings automatically.
+
+Below the SIMULATE button are three number inputs:
+MIN, MAX, DECIMALS, CRASH, SURGE, CRASH% and SURGE%.
+The SIMULATE button adds or subtracts a random amount from the price for each category,
+making sure this random amount isn't lower than MIN and higher than MAX and has that many DECIMALS.
+It will also roll for a crash or surge, meaning there is a CRASH% percent chance
+that the CRASH amount will be reduced from the price,
+and a SURGE% percent chance that the SURGE amount will be added to the price.
+If a crash or surge is rolled, then the random amount is not applied.
+Pressing it updates the rankings automatically.
+
+# Dummy Wallet
+
+I need a very simple JS website, and I need help hosting it on Github for free.
+All it is, is a virtual wallet for your phone.
+When you access it on "https://virtwallet.xyz/" (it's an example link), all the user will see is a large monetary amount in the center.
+Right below that must be a RECEIVE PAYMENT button that you press and it opens the camera for QR Code scanning.
+Encoded in the QR Code is simply the amount of money that will be added (or subtracted) from the wallet.
+Once scanned, the wallet updates accordingly.
+There should also be a button on the top right corner which you can hold for 7 seconds and it will reset the wallet to $0.
+The wallet amount is saved as a web browser cookie, so restarting the page won't reset your wallet.
+When you access it on "https://virtwallet.xyz/machine", there must be a number input and, below it, a corresponding QR Code.
+In the number input, you should be able to type any float value, positive or negative, and the QR Code should update automatically.
+That is the QR Code others will scan to receive payment.
