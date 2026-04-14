@@ -133,8 +133,7 @@ input[type=number] {
           <span>
               {{ c.name }}
               <span style="font-size:16px" :class="priceChangeClass(c)">
-                  <span v-if="c.price - c.last >= 0">+</span>
-                  {{ (c.price - c.last).toFixed(2) }}
+                  <span v-if="c.price - c.last >= 0">+</span>{{ (c.price - c.last).toFixed(2) }}
               </span>
           </span>
 
